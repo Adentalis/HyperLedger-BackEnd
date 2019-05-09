@@ -16,7 +16,8 @@ The programm exists out of 3 files
 The first one is the chaincode.yaml. In it is just the name and version of the programm.
 The second and third file have to be  in a folder called "src" in order to be accepted of the SAP service. These two files are the chaincode itself and the REST API interface made with swagger.
 
-For a more detailled explanation you can read the german documentation i wrote in my job
+For a more detailled explanation you can read the german documentation i wrote in my job. 
+It has exactly like the Bitcoin Whitepaper just 9 pages :) #FunFact
 
 
 
