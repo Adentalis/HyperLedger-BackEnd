@@ -2,8 +2,8 @@
 
 This project is about testing Hyperledger Fabric from IBM in the SAP Hyperledger Service
 
-The programm is a test car fleet. Its possible to create/read/update/delete cars and users. A user can borrow a car if the car isnt borrowed by someone else yet. After the car is borrowed it can be returned again and a TravelLog with all the metadata is automatically created.
-Thats the whole point of this system. Automate everything with the blockchain so the user dont have to write data manually on a sheet of paper with all the information about the borrow.
+The programm is a test car fleet. Its possible to create/read/update/delete cars and users. A user can borrow a car if the car isnt borrowed by someone else yet. After the car is borrowed it can be returned and a TravelLog with all the metadata is automatically created.
+Thats the whole point of this system. Automate everything with the blockchain so the user dont have to write data manually on a sheet of paper with all the information about the borrow. 
 
 
 ## How to use
