@@ -1,0 +1,460 @@
+swagger: "2.0"
+
+info:
+  description: "Lets play with cars and users"
+  version: "1.0"
+  title: "Test Fuhrpark"
+
+
+############################################################## DEFAULT OUT: JSON
+consumes:
+  - application/x-www-form-urlencoded
+produces:
+  - application/json
+
+
+############################################################# REQUEST PARAMETERS
+parameters:
+
+  #------------------------------------------------------------------------ {id}
+  objId:
+    name: id
+    in: path
+    description: ID of the object
+    required: true
+    type: integer
+    maxLength: 32
+
+
+#################### TAGS
+tags:
+  - name: Car
+    description: Everything about cars
+  - name: User
+    description: Everything about users
+  - name: User - Operation
+    description: All avaible operations for a user
+  - name: Administration
+    description: All kind of things for the admin
+  - name: Test
+    description: All Tests are here
+
+########################################################################## PATHS
+paths:
+
+  
+  #================================================================= PATH: /{id}
+  /cars/{id}:
+  
+    #-------------------------------------------------------- GET /{id} ==> READ
+    get:
+      operationId: getCarById
+      summary: read car by id
+      tags:
+        - Car
+      parameters:
+      - $ref: '#/parameters/objId'
+      responses:
+        200:
+          description: OK
+          schema:
+            type: object
+        404:
+          description: Not Found
+    #----------------------------------------------------- POST /{id} ==> CREATE
+    post:
+      operationId: createCar
+      summary: create car by id
+      tags:
+        - Car
+      consumes:
+      - application/json
+      parameters:
+      - $ref: '#/parameters/objId'
+      - name: car (JSON)
+        in: body
+        schema:
+         $ref: '#/definitions/Car'
+      responses:
+        201:
+          description: Created
+        400:
+          description: Parameter Mismatch
+        409:
+          description: Already Exists
+    #---------------------------------------------------PUT
+    put:
+      operationId: updateCar
+      summary: update car by id
+      tags:
+        - Car
+      consumes:
+      - application/json
+      parameters:
+      - $ref: '#/parameters/objId'
+      - name: car (JSON)
+        in: body
+        schema:
+         $ref: '#/definitions/Car'
+      responses:
+        201:
+          description: Updated
+        400:
+          description: Parameter Mismatch
+        404:
+          description: Not Found
+  #---------------------------------------------------DELETE
+    delete:
+      operationId: deleteCar
+      summary: delete car by id
+      tags:
+        - Car
+      consumes:
+      - application/json
+      parameters:
+      - $ref: '#/parameters/objId'
+      responses:
+        201:
+          description: Deleted
+        400:
+          description: Parameter Mismatch
+        404:
+          description: Not Found
+          
+  /cars:
+    #-------------------------------------------------------- GET ALL
+    get:
+      operationId: getAllCars
+      summary: get all cars
+      tags:
+        - Car
+      responses:
+        200:
+          description: OK
+          schema:
+            type: object
+        404:
+          description: Not Found
+    
+  #===================================USERS============================== 
+  /users/{id}:
+  
+    #-------------------------------------------------------- GET /{id} ==> READ
+    get:
+      operationId: getUserById
+      summary: read user by id
+      tags:
+        - User
+      parameters:
+      - $ref: '#/parameters/objId'
+      responses:
+        200:
+          description: OK
+          schema:
+            type: object
+        404:
+          description: Not Found
+    #----------------------------------------------------- POST /{id} ==> CREATE
+    post:
+      operationId: createUser
+      summary: create user by id
+      tags:
+        - User
+      consumes:
+      - application/json
+      parameters:
+      - $ref: '#/parameters/objId'
+      - name: car (JSON)
+        in: body
+        schema:
+         $ref: '#/definitions/User'
+      responses:
+        201:
+          description: Created
+        400:
+          description: Parameter Mismatch
+        409:
+          description: Already Exists
+    #---------------------------------------------------PUT
+    put:
+      operationId: updateUser
+      summary: update user by id
+      tags:
+        - User
+      consumes:
+      - application/json
+      parameters:
+      - $ref: '#/parameters/objId'
+      - name: car (JSON)
+        in: body
+        schema:
+         $ref: '#/definitions/User'
+      responses:
+        201:
+          description: Updated
+        400:
+          description: Parameter Mismatch
+        404:
+          description: Not Found
+  #---------------------------------------------------DELETE
+    delete:
+      operationId: deleteUser
+      summary: delete user by id
+      tags:
+        - User
+      consumes:
+      - application/json
+      parameters:
+      - $ref: '#/parameters/objId'
+      responses:
+        201:
+          description: Deleted
+        400:
+          description: Parameter Mismatch
+        404:
+          description: Not Found
+          
+           
+  /users:
+    #-------------------------------------------------------- GET ALL
+    get:
+      operationId: getAllUser
+      summary: get all users
+      tags:
+        - User
+      responses:
+        200:
+          description: OK
+          schema:
+            type: object
+        404:
+          description: Not Found
+          
+#--------------------------------------BORROW A CAR---------------------
+  /users/borrowCar/{id}:
+    put:
+      operationId: userBorrowACar
+      summary: User can borrow a car
+      tags:
+        - User - Operation
+      consumes:
+      - application/json
+      parameters:
+      - $ref: '#/parameters/objId'
+      - name: car (JSON)
+        in: body
+        schema:
+         $ref: '#/definitions/Borrow'
+      responses:
+        201:
+          description: Updated
+        400:
+          description: Parameter Mismatch
+        404:
+          description: Not Found
+        409:
+          description: Already Borrowed
+          
+#---------------------------------RETURN CAR----------------------  
+  /users/returnCar/{id}:
+    put:
+      operationId: userReturnACar
+      summary: User can return his car
+      tags:
+        - User - Operation
+      consumes:
+      - application/json
+      parameters:
+      - $ref: '#/parameters/objId'
+      - name: information (JSON)
+        in: body
+        schema:
+         $ref: '#/definitions/ReturnCarValues'
+      responses:
+        200:
+          description: OK
+          schema:
+            type: object
+        400:
+          description: Parameter Mismatch
+        404:
+          description: Not Found
+          
+    #---------------------------------GET ALL TRAVELLOGS FOR SPECIFIC USER----------------------  
+  /users/ownTravelLogs/{id}:
+    get:
+      operationId: getAllTravelLogsForUser
+      summary: get a TravelLog by id
+      tags:
+        - User - Operation
+      parameters:
+      - $ref: '#/parameters/objId'
+      responses:
+        200:
+          description: OK
+          schema:
+            type: object
+        404:
+          description: Not Found
+          
+  #---------------------------------GET A BORROW----------------------  
+  /borrowLog/{id}:
+    get:
+      operationId: getBorrowLogById
+      summary: get a borrowLog by id
+      tags:
+        - Administration
+      parameters:
+      - $ref: '#/parameters/objId'
+      responses:
+        200:
+          description: OK
+          schema:
+            type: object
+        404:
+          description: Not Found
+          
+#---------------------------------GET A TRAVELLOG----------------------  
+  /travelLog/{id}:
+    get:
+      operationId: getTravelLogById
+      summary: get a travelLog by id
+      tags:
+        - Administration
+      parameters:
+      - $ref: '#/parameters/objId'
+      responses:
+        200:
+          description: OK
+          schema:
+            type: object
+        404:
+          description: Not Found
+          
+  /borrowLogs:
+    #-------------------------------------------------------- GET ALL
+    get:
+      operationId: getAllBorrowLogs
+      summary: get all borrowLogs
+      tags:
+        - Administration
+      responses:
+        200:
+          description: OK
+          schema:
+            type: object
+        404:
+          description: Not Found
+          
+  /travelLogs:
+    #-------------------------------------------------------- GET ALL
+    get:
+      operationId: getAllTravelLogs
+      summary: get all travelLogs
+      tags:
+        - Administration
+      responses:
+        200:
+          description: OK
+          schema:
+            type: object
+        404:
+          description: Not Found
+          
+          
+  #==================================TESTS========================
+  /allKeys:
+    get:
+      operationId: getAllKeys
+      summary: get all keys now used by the World State
+      tags:
+        - Test
+      responses:
+        200:
+          description: OK
+          schema:
+            type: object
+        404:
+          description: Not Found
+          
+  /allValues:
+    get:
+      operationId: getAllValues
+      summary: get all values now used by the World State
+      tags:
+        - Test
+      responses:
+        200:
+          description: OK
+          schema:
+            type: object
+        404:
+          description: Not Found
+          
+  /allData:
+    get:
+      operationId: getAllData
+      summary: get all Data in the World State
+      tags:
+        - Test
+      responses:
+        200:
+          description: OK
+          schema:
+            type: object
+        404:
+          description: Not Found
+
+        
+######################### ----------------  MODEL FILES
+definitions:
+  Car:
+    type: object
+    description: "A car of our Fuhrpark"
+    properties:
+      id:
+        type: integer
+      km: 
+        type: integer
+      borrowId:
+        type: integer
+    required:
+      - id
+      - km
+      - borrowId
+  
+  User:
+    type: object
+    description: "A User of our Project"
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      borrowId:
+        type: integer
+    required:
+      - id
+      - name
+      - borrowId
+      
+  Borrow:
+    type: object
+    description: "Borrow a car"
+    properties:
+      carId:
+        type: integer
+    required:
+      - carId
+      
+  ReturnCarValues:
+    type: object
+    description: "This is needed to return a car"
+    properties:
+      newKm: 
+        type: integer
+      usage:
+        type: string
+    required:
+      - newKm
+      - usage
