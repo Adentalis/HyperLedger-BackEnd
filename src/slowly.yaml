@@ -404,6 +404,34 @@ paths:
             type: object
         404:
           description: Not Found
+  
+  /nfcBorrow/{id}:
+    get:
+      operationId: nfcBorrow
+      summary: this is for the nfc showcase, as long as the body format problem exists
+      tags:
+        - Test
+      parameters:
+      - $ref: '#/parameters/objId'
+      responses:
+        200:
+          description: OK
+          schema:
+            type: object
+
+  /nfcReturn/{id}:
+    get:
+      operationId: nfcReturn
+      summary: this is for the nfc showcase, as long as the body format problem exists
+      tags:
+        - Test
+      parameters:
+      - $ref: '#/parameters/objId'
+      responses:
+        200:
+          description: OK
+          schema:
+            type: object
 
         
 ######################### ----------------  MODEL FILES

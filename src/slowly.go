@@ -108,16 +108,13 @@ func (cc *CRUD) Init(stub shim.ChaincodeStubInterface) peer.Response {
 		Car{Id: 1, Km: 1000, BorrowId: 0},
 		Car{Id: 2, Km: 1500, BorrowId: 0},
 		Car{Id: 3, Km: 1800, BorrowId: 0},
-		Car{Id: 4, Km: 6500, BorrowId: 0},
-		Car{Id: 5, Km: 1690, BorrowId: 0},
 	}
 
 	users := []User{
 		User{Id: 1, Name: "Alice", BorrowId: 0},
 		User{Id: 2, Name: "Bob", BorrowId: 0},
-		User{Id: 3, Name: "Charlie", BorrowId: 0},
-		User{Id: 4, Name: "Delta", BorrowId: 0},
-		User{Id: 5, Name: "Eve", BorrowId: 0},
+		User{Id: 3, Name: "Daniel", BorrowId: 0},
+
 	}
 
 	i := 0
@@ -195,6 +192,10 @@ func (cc *CRUD) Invoke(stub shim.ChaincodeStubInterface) peer.Response {
 		return cc.getAllValues(stub, args)
 	case "getalldata":
 		return cc.getAllData(stub, args)
+	case "nfcborrow":
+		return cc.nfcBorrow(stub, args)
+	case "nfcreturn":
+		return cc.nfcReturn(stub, args)
 	default:
 		logger.Warningf("Invoke('%s') invalid!", function)
 		return Error(http.StatusNotImplemented, "Invalid method name!!!")
@@ -836,4 +837,157 @@ func (cc *CRUD) getAllData(stub shim.ChaincodeStubInterface, args []string) peer
 	buffer.WriteString("]")
 
 	return Success(http.StatusOK, "OK", buffer.Bytes())
+}
+
+
+//===============================NFC============================
+func (cc *CRUD) nfcBorrow(stub shim.ChaincodeStubInterface, args []string) peer.Response {
+	//here user 3 (daniel = me atm) borrows a car by nfc
+	var userIDToSimulate = 3
+	//in args 0 = id des autos
+	var carIDToBorrow = strconv.Atoi(args[0])
+
+	//create counter and init it with the data in ledger
+	obj, _ := stub.GetState("counterB")
+	counter, _ := strconv.Atoi(string(obj))
+	counter += 1
+
+	//create Starttime
+	time := time.Now()
+	timeString := time.Format("2006-01-02 15:04:05")
+
+
+	//update user
+	ledgerUser, _ := stub.GetState("user" + strconv.Itoa(userIDToSimulate))
+	var user User
+	json.Unmarshal([]byte(ledgerUser), &user)
+
+	if user.Id == 0 {
+		return Error(http.StatusNotFound, "User Not Found - wrong overgiven userId!")
+	}
+	if user.BorrowId != 0 {
+		return Error(http.StatusConflict, "User is already borrowing a car!")
+	}
+
+	user.BorrowId = counter
+	userAsBytes, _ := json.Marshal(user)
+	stub.PutState("user"+strconv.Itoa(user.Id), userAsBytes)
+
+	//update car
+	ledgerCar, _ := stub.GetState("car" + strconv.Itoa(carIDToBorrow))
+	var car Car
+	json.Unmarshal([]byte(ledgerCar), &car)
+
+	if car.Id == 0 {
+		return Error(http.StatusNotFound, "Car Not Found - wrong overgiven carId!")
+	}
+	if car.BorrowId != 0 {
+		return Error(http.StatusConflict, "Car is already borrowed by a Car!")
+	}
+
+	//create CarBorrow struct and put it in the ledger
+	carBorrow := CarBorrow{
+		Id: counter, 
+		CarId: carIDToBorrow, 
+		UserId: userIDToSimulate, 
+		StartTime: timeString
+	}
+	
+	carBorrowAsBytes, _ := json.Marshal(carBorrow)
+	stub.PutState("borrow"+strconv.Itoa(counter), carBorrowAsBytes)
+	
+	//update cborrow
+	stub.PutState("counterB", []byte(strconv.Itoa(counter)))
+
+	car.BorrowId = counter
+	carAsBytes, _ := json.Marshal(car)
+	stub.PutState("car"+strconv.Itoa(car.Id), carAsBytes)
+
+	//Create Event
+	eventString := "User with id: " + strconv.Itoa(user.Id) + " borrowed successfully car by nfc with id: " + strconv.Itoa(car.Id)
+	stub.SetEvent("Borrow a car by nfc", []byte(eventString))
+	return Success(http.StatusOK, "OK", []byte("Borrow a car by nfc accepted"))
+
+}
+
+func (cc *CRUD) nfcReturn(stub shim.ChaincodeStubInterface, args []string) peer.Response {
+	//here user 3 (daniel = me atm) borrows a car by nfc
+	var userIDToSimulate = 3
+	//in args 0 = id des autos
+	var carIDToBorrow = strconv.Atoi(args[0])
+
+	//get User out of ledger and init it here in Code
+	ledgerUser, err := stub.GetState("user" + strconv.Itoa(userIDToSimulate))
+	if err != nil || ledgerUser == nil {
+		return Error(http.StatusBadRequest, "This user doenst exist!")
+	}
+
+	var user User
+	json.Unmarshal([]byte(ledgerUser), &user)
+
+	//check if a car is borrowed
+	if user.BorrowId == 0 {
+		return Error(http.StatusBadRequest, "This user dont have a borrowed car!")
+	}
+
+	//get the borrowInformation to get the borrowed car
+	var carBorrow CarBorrow
+	ledgerBorrow, _ := stub.GetState("borrow" + strconv.Itoa(user.BorrowId))
+	json.Unmarshal([]byte(ledgerBorrow), &carBorrow)
+
+	if carBorrow.CarId == 0 {
+		return Error(http.StatusBadRequest, "Couldnt find car! - shouldnt happen - this car was deleted by admin")
+	}
+
+	//get the car
+	var car Car
+	ledgerCar, _ := stub.GetState("car" + strconv.Itoa(carBorrow.CarId))
+	json.Unmarshal([]byte(ledgerCar), &car)
+
+	if car.BorrowId != user.BorrowId {
+		return Error(http.StatusBadRequest, "This Should not happen - check for user.Borrowid != car.Borrowid")
+	}
+
+
+	//create new travelLog and put it in the ledger
+	time := time.Now()
+	timeString := time.Format("2006-01-02 15:04:05")
+	drivenKm := 0
+
+	travelLog := TravelLog{
+		Id:        carBorrow.Id,
+		UserId:    user.Id,
+		CarId:     car.Id,
+		Usage:     "NFC demonstration",
+		StartKm:   car.Km,
+		EndKm:     overgivenParam.NewKm,
+		DrivenKm:  drivenKm,
+		StartTime: carBorrow.StartTime,
+		EndTime:   timeString,
+	}
+
+	travelLogAsBytes, _ := json.Marshal(travelLog)
+	if err := stub.PutState("travelLog"+strconv.Itoa(travelLog.Id), travelLogAsBytes); err != nil {
+		return Error(http.StatusInternalServerError, "create travelLog failed")
+	}
+
+	//update user
+	user.BorrowId = 0
+	userAsBytes, _ := json.Marshal(user)
+	if err := stub.PutState("user"+strconv.Itoa(user.Id), userAsBytes); err != nil {
+		return Error(http.StatusInternalServerError, "Update user failed")
+	}
+
+	//update car
+	car.BorrowId = 0
+	car.Km = overgivenParam.NewKm
+	carAsBytes, _ := json.Marshal(car)
+	if err := stub.PutState("car"+strconv.Itoa(car.Id), carAsBytes); err != nil {
+		return Error(http.StatusInternalServerError, "Update car failed")
+	}
+
+	//create Event when everything went right
+	str := "User: " + strconv.Itoa(user.Id) + " returened his Car: " + strconv.Itoa(car.Id) + " by nfc --> TravelLog: " + strconv.Itoa(travelLog.Id) + " created!"
+	stub.SetEvent("User returned Car by nfc", []byte(str))
+	return Success(http.StatusOK, "OK", []byte("Car returned by nfc"))
 }
